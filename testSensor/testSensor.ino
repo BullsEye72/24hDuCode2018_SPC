@@ -11,8 +11,10 @@ int sensor_L = 1;
 int detect_SL;
 int detect_SR;
 
-int speedval=20;
+int speedval=15;
 int turnFact=3;
+int trackingState=0;
+bool lost=false;
 
 void setup()
 { 
@@ -25,8 +27,7 @@ void setup()
   pinMode(sensor_L,INPUT);
 }
 
-int trackingState=0;
-bool lost=false;
+
 
 void checkAndUpdateState()
 {
@@ -73,30 +74,34 @@ Serial.println("==========");
   
 }
 
-void loop()
-{
+void ApplyState(){
   switch(trackingState)
   {
     case 1 : //TOUT DROIT !
       fs90r_L.write(90+speedval);
-      fs90r_R.write(90-speedval);
+      fs90r_R.write(88-speedval);
       break;
     case 2 : //A GAUCHE !
       fs90r_L.write(90+speedval*turnFact);
-      fs90r_R.write(90+speedval*turnFact);
+      fs90r_R.write(88+speedval*turnFact);
       break;
     case 3 : //A DROITE !
       fs90r_L.write(90-speedval*turnFact);
-      fs90r_R.write(90-speedval*turnFact);
+      fs90r_R.write(88-speedval*turnFact);
       break;
     default: //STOP !
       fs90r_L.write(90);
-      fs90r_R.write(90);
+      fs90r_R.write(88);
       break;
   }
+}
 
+void loop()
+{
+
+    
     checkAndUpdateState();
-    //Serial.print("State : ");
-    //Serial.println(trackingState);
-    //delay(5);
+    ApplyState();
+    //delay(20);
+
 }
