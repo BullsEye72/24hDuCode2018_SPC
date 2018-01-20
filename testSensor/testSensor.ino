@@ -11,7 +11,8 @@ int sensor_L = 1;
 int detect_SL;
 int detect_SR;
 
-int speedval=15;
+int speedval=20;
+int turnFact=3;
 
 void setup()
 { 
@@ -24,34 +25,78 @@ void setup()
   pinMode(sensor_L,INPUT);
 }
 
-void loop()
+int trackingState=0;
+bool lost=false;
+
+void checkAndUpdateState()
 {
   detect_SL=digitalRead(sensor_L);
   detect_SR=digitalRead(sensor_R);
+Serial.print(trackingState);
+Serial.print(lost);
+Serial.println("==========");
+  if(trackingState == 0 && (detect_SL==LOW || detect_SR==LOW))
+  {
+    Serial.println("0");
+    trackingState=1;
+    lost=false;
+    return;
+  }
+
+  if(!lost && (detect_SL==HIGH || detect_SR==HIGH)){
+    Serial.println("1");
+    lost = true;
+    if(detect_SL==HIGH) { trackingState=3; }
+    if(detect_SR==HIGH) { trackingState=2; }
+    return;
+  }
+
+  if(lost && trackingState==2 && detect_SL==LOW){
+    Serial.println("2");
+    lost=false;
+    trackingState=1;
+    return;
+  }
+
+  if(lost && trackingState==3 && detect_SR==LOW){
+    Serial.println("3");
+    lost=false;
+    trackingState=1;
+    return;
+  }
+
+  if(detect_SL==HIGH && detect_SR==HIGH){
+    Serial.println("4");
+    trackingState=0;
+  }
   
-  if(detect_SL==LOW && detect_SR==LOW)
-  { 
-    fs90r_L.write(90+speedval);                // sets the servo speed according to the scaled value
-    fs90r_R.write(90-speedval);              // sets the servo speed according to the scaled value
-    Serial.println("En avant!");
-  }
-  else if(detect_SL==LOW && detect_SR==HIGH)
+  
+}
+
+void loop()
+{
+  switch(trackingState)
   {
-    fs90r_L.write(90+speedval*2);
-    fs90r_R.write(90);
-    Serial.println("Detecté a D - Go a gauche!");
+    case 1 : //TOUT DROIT !
+      fs90r_L.write(90+speedval);
+      fs90r_R.write(90-speedval);
+      break;
+    case 2 : //A GAUCHE !
+      fs90r_L.write(90+speedval*turnFact);
+      fs90r_R.write(90+speedval*turnFact);
+      break;
+    case 3 : //A DROITE !
+      fs90r_L.write(90-speedval*turnFact);
+      fs90r_R.write(90-speedval*turnFact);
+      break;
+    default: //STOP !
+      fs90r_L.write(90);
+      fs90r_R.write(90);
+      break;
   }
-  else if(detect_SL==HIGH && detect_SR==LOW)
-  {
-    fs90r_L.write(90);
-    fs90r_R.write(90-speedval*2);
-    Serial.println("Detecté a G - Go a droite!");
-  }
-  else
-  {
-    fs90r_L.write(90);
-    fs90r_R.write(90);
-    Serial.println("STOOPPPP!");
-  }
-  delay(15);
+
+    checkAndUpdateState();
+    //Serial.print("State : ");
+    //Serial.println(trackingState);
+    //delay(5);
 }

@@ -1,3 +1,4 @@
+/*
 #include <common.h>
 #include <drv_95HF.h>
 #include <drv_spi.h>
@@ -26,6 +27,7 @@
 #include <lib_pcd.h>
 #include <lib_wrapper.h>
 #include <miscellaneous.h>
+*/
 
 #include <SPI.h>
 #include <WiFiST.h>
@@ -43,6 +45,7 @@ int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 void callback(char* topic, byte* payload, unsigned int length) {
   // handle message arrived
+  Serial.print(topic);
 }
 
 const char* server = "24hducode.spc5studio.com";
@@ -53,7 +56,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   //Initialize serial and wait for port to open:
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
@@ -70,12 +73,12 @@ void setup() {
   // you're connected now, so print out the data:
   Serial.print("You're connected to the network");
 
-  Serial.print("connection to broker");
+  Serial.println("connection to broker and send message");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
-    client.publish("24hcode/teamC/7d253/device2broker","Hello from Psykokwak");
     client.subscribe("24hcode/teamC/7d253/broker2device");
+    client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");    
   }
-  Serial.print("Test end");
+
 }
 
 void loop() {
