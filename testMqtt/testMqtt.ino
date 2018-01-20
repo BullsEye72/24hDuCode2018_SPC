@@ -43,10 +43,9 @@ char ssid[] = "24HDUCODE";         //  your network SSID (name)
 char pass[] = "2018#24hcode!";  // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-void callback(char* topic, byte* payload, unsigned int length) {
+//void callback(char* topic, byte* payload, unsigned int length) {
   // handle message arrived
-  Serial.print(topic);
-}
+//}
 
 const char* server = "24hducode.spc5studio.com";
 WiFiClient wifiClient;
@@ -67,25 +66,23 @@ void setup() {
     Serial.println(ssid);
     // Connect to WPA/WPA2 network:
     status = WiFi.begin(ssid, pass);
-    // wait 5 seconds for connection:
-    delay(10000);
+    // wait for connection:
+    delay(1000);
   }
-  // you're connected now, so print out the data:
-  Serial.print("You're connected to the network");
+  Serial.println("You're connected to the network");
+  
+  
 
+}
+
+void sendMessage2Broker(chr* message){
   Serial.println("connection to broker and send message");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
     client.subscribe("24hcode/teamC/7d253/broker2device");
     client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");    
   }
-
 }
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(200);                       // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(200);
-
   client.loop();
 }

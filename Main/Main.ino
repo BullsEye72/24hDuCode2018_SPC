@@ -1,4 +1,4 @@
-#include "stdint.h"
+/*#include "stdint.h"
 #include "stdbool.h"
 #include "string.h"
 #include "lib_NDEF_URI.h"
@@ -11,30 +11,32 @@
 #include "lib_95HFConfigManager.h"
 #include "lib_wrapper.h"
 #include "lib_NDEF_URI.h"
-#include "drv_spi.h"
+#include "drv_spi.h"*/
 #include <Servo.h>
 
 //=============== MACHINE STATE VARIABLES ==================
 Servo fs90r_L;
 Servo fs90r_R;
+int val_L;
+int val_R;
 int servo_L = 6; //pins
 int servo_R = 5; //pins
 int sensor_R = 0; //pins
 int sensor_L = 1; //pins
 int detect_SL;
 int detect_SR;
-int speedval=20;
-int turnFact=2;
+int speedval=15;
+int turnFact=3;
 int trackingState=0;
 bool lost=false;
 //=============== END MACHINE STATE VARIABLES ==================
 //=============== NFC VARIABLES ==================
-#define SerialPort Serial
+/*#define SerialPort Serial
 #define BULK_MAX_PACKET_SIZE            0x00000040
-#define PICC_TYPEA_ACConfigA            0x27  /* backscaterring */
-#define PICC_TYPEB_ARConfigD            0x0E  /* card demodulation gain */
-#define PICC_TYPEB_ACConfigA            0x17  /* backscaterring */
-#define PICC_TYPEF_ACConfigA            0x17  /* backscaterring */
+#define PICC_TYPEA_ACConfigA            0x27 
+#define PICC_TYPEB_ARConfigD            0x0E
+#define PICC_TYPEB_ACConfigA            0x17 
+#define PICC_TYPEF_ACConfigA            0x17 
 uint8_t TT1Tag[NFCT1_MAX_TAGMEMORY];
 uint8_t TT2Tag[NFCT2_MAX_TAGMEMORY];
 uint8_t TT3Tag[NFCT3_MAX_TAGMEMORY];
@@ -56,32 +58,10 @@ static char dataOut[256];
 #define X_NUCLEO_NFC03A1_LED1 D7
 #define X_NUCLEO_NFC03A1_LED2 D6
 #define X_NUCLEO_NFC03A1_LED3 D5
-#define X_NUCLEO_NFC03A1_LED4 D4
+#define X_NUCLEO_NFC03A1_LED4 D4*/
 //=============== END NFC VARIABLES ==================
 
 //=================== MACHINE STATE FUNCTIONS ========================
-void ApplyState(){
-  switch(trackingState)
-  {
-    case 1 : //TOUT DROIT !
-      fs90r_L.write(90+speedval);
-      fs90r_R.write(90-speedval);
-      break;
-    case 2 : //A GAUCHE !
-      fs90r_L.write(90+speedval*turnFact);
-      fs90r_R.write(90+speedval*turnFact);
-      break;
-    case 3 : //A DROITE !
-      fs90r_L.write(90-speedval*turnFact);
-      fs90r_R.write(90-speedval*turnFact);
-      break;
-    default: //STOP !
-      fs90r_L.write(90);
-      fs90r_R.write(90);
-      break;
-  }
-}
-
 void checkAndUpdateState()
 {
   detect_SL=digitalRead(sensor_L);
@@ -122,9 +102,31 @@ void checkAndUpdateState()
     trackingState=0;
   }
  }
+
+ void ApplyState(){
+  switch(trackingState)
+  {
+    case 1 : //TOUT DROIT !
+      fs90r_L.write(90+speedval);
+      fs90r_R.write(88-speedval);
+      break;
+    case 2 : //A GAUCHE !
+      fs90r_L.write(90+speedval*turnFact);
+      fs90r_R.write(88+speedval*turnFact);
+      break;
+    case 3 : //A DROITE !
+      fs90r_L.write(90-speedval*turnFact);
+      fs90r_R.write(88-speedval*turnFact);
+      break;
+    default: //STOP !
+      fs90r_L.write(90);
+      fs90r_R.write(88);
+      break;
+  }
+}
  //===================== END MACHINE STATE FUNCTIONS ======================== 
  //===================== NFC READING FUNCTIONS ==============================
-void processNFC()
+/*void processNFC()
 {
   devicemode = PCD;
   TagType = ConfigManager_TagHunting(TRACK_ALL);
@@ -152,7 +154,7 @@ void processNFC()
           
         if(status == RESULTOK && RecordStruct.TypeLength != 0)
         {
-          if (NDEF_ReadURI(&RecordStruct, &url)==RESULTOK) /*---if URI read passed---*/
+          if (NDEF_ReadURI(&RecordStruct, &url)==RESULTOK) 
           {
             char* dataNFC = (char *)url.URI_Message;
             char areneId[5];
@@ -172,7 +174,7 @@ void processNFC()
         }
       }
   }
-}
+}*/
   //====================== END NFC FUNCTIONS ===================================
 
 
@@ -185,10 +187,10 @@ void setup() {
   pinMode(sensor_R,INPUT);
   pinMode(sensor_L,INPUT);
   
-  Serial.println("SETUP NFC ...");
+  /*Serial.println("SETUP NFC ...");
   ConfigManager_HWInit();  
   terminal_msg_flag = true;
-  digitalWrite(X_NUCLEO_NFC03A1_LED1, HIGH);
+  digitalWrite(X_NUCLEO_NFC03A1_LED1, HIGH);*/
 }
 
 void loop() {
