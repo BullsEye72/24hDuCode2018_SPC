@@ -43,9 +43,9 @@ char ssid[] = "24HDUCODE";         //  your network SSID (name)
 char pass[] = "2018#24hcode!";  // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-//void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char* topic, byte* payload, unsigned int length) {
   // handle message arrived
-//}
+}
 
 const char* server = "24hducode.spc5studio.com";
 WiFiClient wifiClient;
@@ -79,7 +79,9 @@ void sendMessage2Broker(chr* message){
   Serial.println("connection to broker and send message");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
     client.subscribe("24hcode/teamC/7d253/broker2device");
-    client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");    
+    //client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");    
+    client.publish("24hcode/teamC/7d253/device2broker","A3a:A#BA#AA#AG#GG#GF#FF#FED#ED#DC#CC#DD#A");    
+    
   }
 }
 
