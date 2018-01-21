@@ -14,6 +14,8 @@
 #include "drv_spi.h"
 #include <Servo.h>
 #include <time.h>
+#include <Wire.h>
+#include <vl53l0x_class.h>
 
 //====== MQTT ======================
 #include <SPI.h>
@@ -31,8 +33,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 PubSubClient client(server, 1883, callback, wifiClient);
 //=======================================
-
-
+//============ TOF =======================
+TwoWire WIRE1(14, 15);  //SDA=PB11 & SCL=PB10
+VL53L0X sensor_vl53l0x(&WIRE1, 4, 7); //XSHUT=PC6 & INT=PC7
+int compteur = 0;
 
 
 #define SerialPort Serial
@@ -112,6 +116,24 @@ bool lost=false;
 
 void setup()
 { 
+ int status;
+  // Led.
+  pinMode(LED_BUILTIN, OUTPUT);
+
+ 
+  // Initialize I2C bus.
+  WIRE1.begin();
+
+  // Switch off VL53L0X component.
+  sensor_vl53l0x.VL53L0X_Off();
+
+  // Initialize VL53L0X top component.
+  status = sensor_vl53l0x.InitSensor(0x10);
+  if(status)
+  {
+    Serial.println("Init sensor_vl53l0x failed...");
+  }   
+    
     // 95HF HW Init
   ConfigManager_HWInit();
   
@@ -195,9 +217,8 @@ void ApplyState(){
   int Rval = 90;
   int Lval = 90;
 
-  int speedvalFast=20;
-  int speedvalSlow=15;
-  int turnFact=4;
+  int speedvalFast=18;
+  int speedvalSlow=14;
   
   switch(trackingState)
   {
@@ -417,13 +438,49 @@ void playTone()
   } 
 }
 //==========================================================
+bool isPetted = false;
+bool isStuck = false;
 
+void readRange(){
+// Read Range.
+  uint32_t distance;
+  int status;
+  status = sensor_vl53l0x.GetDistance(&distance);
+
+  //Serial.println(distance);
+
+  if(distance < 130)
+  {
+     if(status == 0)
+    {
+      compteur++;
+      Serial.print("Nb. de caresses : ");
+      Serial.println(compteur);
+    }
+
+    if(compteur >= 5)
+    {
+      Serial.println("Merci! Je vais mieux!");
+      isPetted=false;
+      compteur = 0;
+    }
+
+    if (status == VL53L0X_ERROR_NONE)
+    {
+      // Output data.
+      //char report[64];
+      //snprintf(report, sizeof(report), "| Distance [mm]: %ld |", distance);
+      //Serial.println(report);
+    }
+  }
+}
+//==========================================================
 
 
 void loop()
 {
 
-    for(int i = 0 ; i < 50 ; i++){
+    for(int i = 0 ; i < 40 ; i++){
       loopTracking();
       delay(5);
     } 
@@ -456,6 +513,12 @@ void loop()
     }
     else if(strcmp(areneId,"A5a") == 0){
         epreuveA5();
+    }
+    else if(strcmp(areneId,"A6") == 0){
+        epreuveA6();
+    }
+    else if(strcmp(areneId,"A8") == 0){
+        epreuveA8();
     }
 
     areneId="";
@@ -496,6 +559,33 @@ void epreuveA3(){
   Serial.println("Message envoyé!");
   Serial.println(tmpChar);
 }
+
+void epreuveA6(){
+  
+
+  isPetted = true;
+  while(isPetted){
+    readRange();  
+  }  
+  
+  Serial.println("connection to broker for A6");
+  if(client.connect("teamC", "Psykokwak", "E1255A34")){
+    client.publish("24hcode/teamC/7d253/device2broker", "A6:5");
+  }
+  Serial.println("Message envoyé!");
+}
+
+void epreuveA8(){
+    
+  Serial.println("connection to broker for A8");
+  if(client.connect("teamC", "Psykokwak", "E1255A34")){
+    client.publish("24hcode/teamC/7d253/device2broker", "A8:blue");
+  }
+  Serial.println("Message envoyé!");
+}
+
+
+
 
 void epreuveA5(){
     char message[100], ch;
