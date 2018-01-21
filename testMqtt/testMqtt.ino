@@ -70,12 +70,6 @@ void setup() {
   // you're connected now, so print out the data:
   Serial.print("You're connected to the network");
 
-  Serial.print("connection to broker");
-  if(client.connect("teamC", "Psykokwak", "E1255A34")){
-    client.publish("24hcode/teamC/7d253/device2broker","A2:SuperFast");
-    client.subscribe("24hcode/teamC/7d253/broker2device");
-  }
-  Serial.print("Test end");
 }
 
 void loop() {

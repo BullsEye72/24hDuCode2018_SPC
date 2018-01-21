@@ -15,6 +15,26 @@
 #include <Servo.h>
 #include <time.h>
 
+//====== MQTT ======================
+#include <SPI.h>
+#include <WiFiST.h>
+#include <PubSubClient.h>
+SPIClass SPI_3(PC12, PC11, PC10);
+WiFiClass WiFi(&SPI_3, PE0, PE1, PE8, PB13);
+char ssid[] = "24HDUCODE";         //  your network SSID (name)
+char pass[] = "2018#24hcode!";  // your network password
+int status = WL_IDLE_STATUS;     // the Wifi radio's status
+const char* server = "24hducode.spc5studio.com";
+WiFiClient wifiClient;
+void callback(char* topic, byte* payload, unsigned int length) {
+  // handle message arrived
+}
+PubSubClient client(server, 1883, callback, wifiClient);
+//=======================================
+
+
+
+
 #define SerialPort Serial
 
 /* Exported define -----------------------------------------------------------*/
@@ -68,7 +88,7 @@ sRecordInfo_uri RecordStruct;
 int8_t TagType = TRACK_NOTHING;
 bool TagDetected = false;
 bool terminal_msg_flag = false ;
-uint8_t status = ERRORCODE_GENERIC;
+//uint8_t status = ERRORCODE_GENERIC;
 static char dataOut[256];
 
 #define X_NUCLEO_NFC03A1_LED1 D7
@@ -94,18 +114,6 @@ void setup()
 { 
     // 95HF HW Init
   ConfigManager_HWInit();
-
-  // LED1
-  //pinMode(X_NUCLEO_NFC03A1_LED1, OUTPUT);
-
-  // LED2
-  //pinMode(X_NUCLEO_NFC03A1_LED2, OUTPUT);
-
-  // LED3
-  //pinMode(X_NUCLEO_NFC03A1_LED3, OUTPUT);
-
-  // LED4
-  //pinMode(X_NUCLEO_NFC03A1_LED4, OUTPUT);
   
   Serial.begin(115200);
 
@@ -114,13 +122,23 @@ void setup()
   
   pinMode(sensor_R,INPUT);
   pinMode(sensor_L,INPUT);
-
-  SerialPort.print("\r\n\r\n---------------------------------------\r\n******Welcome to x-nucleo-nfc03a1 demo******\r\n----------------------------------------");
-  SerialPort.print("\r\n\r\nPlease bring an NFC tag to the board vicinity and Press User Button B1 on the board to start URI Writer/Reader demo on the tag");
   
-  terminal_msg_flag = true;
+  pinMode(LED_BUILTIN, OUTPUT);
+  
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
 
-  //digitalWrite(X_NUCLEO_NFC03A1_LED1, HIGH);
+   while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to WPA SSID: ");
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network:
+    status = WiFi.begin(ssid, pass);
+    // wait 5 seconds for connection:
+    delay(10000);
+  }
+  // you're connected now, so print out the data:
+  Serial.print("You're connected to the network");
 }
 
 
@@ -201,52 +219,27 @@ void ApplyState(){
 
 char* areneId;
 char* nomEpreuve;
-char* inscruction;
+char* instruction;
 
 void nfctrucmuch(){
-
-    //devicemode = PCD;
-    
-  /* Scan to find if there is a tag */
+  
   TagType = ConfigManager_TagHunting(TRACK_ALL);
-  //TagType = TRACK_NFCTYPE2;
     
-  if(TagType==TRACK_NFCTYPE2)
+  if(TagType==TRACK_NFCTYPE2 && TagDetected == false)
   {
-      TagDetected = true;
-        
-      if(terminal_msg_flag == true )
-      {
-        terminal_msg_flag = false ;
-          
-        /*---HT UI msg----------*/
-        SerialPort.print( "\r\n\r\nTRACK_NFCTYPE2 NFC tag detected nearby");
-        //digitalWrite(X_NUCLEO_NFC03A1_LED2, HIGH);
-      }
-   }     
-   else
-    {
-      TagDetected = false;
-      
-      if(terminal_msg_flag == false)
-      {
-        terminal_msg_flag = true ;
-        /*---HT UI msg----------*/
-        SerialPort.println( "\r\n\r\nCurrently there is no NFC tag in the vicinity");
-        //digitalWrite(X_NUCLEO_NFC03A1_LED2, LOW);
-        //digitalWrite(X_NUCLEO_NFC03A1_LED3, LOW);
-        //digitalWrite(X_NUCLEO_NFC03A1_LED4, LOW);
-      }
-    }
-   
-  //delay(300);
+    TagDetected = true;
+    SerialPort.println( "TAG NFC Detecté!");
+  }     
+  else
+  {
+    TagDetected = false;
+    //Serial.println( "Plus de TAG NFC en vue...");
+  }   
 
   if (TagDetected == true)
   {       
-    TagDetected = false;
-      
       status = ERRORCODE_GENERIC;
-      SerialPort.println( "Tag detecté ! Tentative de lecture :");
+      SerialPort.print( "Tentative de lecture : ");
       delay(500);
 
 
@@ -260,13 +253,12 @@ void nfctrucmuch(){
           
         if(status == RESULTOK && RecordStruct.TypeLength != 0)
         {
-          if (NDEF_ReadURI(&RecordStruct, &url)==RESULTOK) /*---if URI read passed---*/
+          if (NDEF_ReadURI(&RecordStruct, &url)==RESULTOK) 
           {
             char* dataNFC = (char *)url.URI_Message;
             areneId = "";
             nomEpreuve = "";
-            inscruction = "";
-
+            instruction = "";
               
             char * pch;
             pch = strtok (dataNFC,":");
@@ -278,21 +270,21 @@ void nfctrucmuch(){
               else if(nomEpreuve==""){
                 nomEpreuve=pch;
               }
-              else if(inscruction==""){
-                inscruction=pch;
+              else if(instruction==""){
+                instruction=pch;
               }
               
               pch = strtok (NULL, ":");
             }
            
-            digitalWrite(X_NUCLEO_NFC03A1_LED4, HIGH);
           }
         
         }
 
       }
-      Serial.println("Suite.");
-  }
+      
+      TagDetected = false;
+    }
     
 }
 
@@ -300,6 +292,130 @@ void loopTracking(){
   checkAndUpdateState();
   ApplyState();
 }
+
+//===================== MUSIC ! ============================
+#define  C     3830    // 261 Hz
+#define  D     3400    // 294 Hz
+#define  E     3038    // 329 Hz
+#define  F     2864    // 349 Hz 
+#define  G     2550    // 392 Hz 
+#define  A     2272    // 440 Hz 
+#define  B     2028    // 493 Hz 
+#define  R     20
+
+#define  C     3830    // 261 Hz
+#define  D     3400    // 294 Hz
+#define  E     3038    // 329 Hz
+#define  F     2864    // 349 Hz 
+#define  G     2550    // 392 Hz 
+#define  A     2272    // 440 Hz 
+#define  B     2028    // 493 Hz 
+#define  R     20
+
+long duration  = 0;
+int rest_count = 100;
+int speaker = A5;
+int* melody;
+int* beats;
+long tempo = 10000;
+int pause = 1000; 
+int tone_ = 0;
+int beat = 0;
+
+void chanter(char* tab)
+{
+  int songLength = 0;
+  for(songLength; tab[songLength] ; songLength++); 
+  Serial.print("Longueur partition : ");
+  Serial.println(songLength);
+  
+  for(int i = 0; i < songLength; i++)
+  {
+    if(tab[i] == 'C')
+    {
+      melody[i] = C;
+      beats[i] = 32;
+    }
+    else if(tab[i] == 'D')
+    {
+      melody[i] = D;
+      beats[i] = 32;
+    }
+    else if(tab[i] == 'E')
+    {
+      melody[i] = E;
+      beats[i] = 32;
+    }
+    else if(tab[i] == 'F')
+    {
+      melody[i] = F;
+      beats[i] = 32;
+    }
+    else if(tab[i] == 'G')
+    {
+      melody[i] = G;
+      beats[i] = 32;
+    }
+    else if(tab[i] == 'A')
+    {
+      melody[i] = A;
+      beats[i] = 32;
+    }
+    else if(tab[i] == 'B')
+    {
+      melody[i] = B;
+      beats[i] = 32;
+    }
+    else if(tab[i] == '#')
+    {
+      melody[i] = R;
+      beats[i] = 32;
+    }
+  }
+
+  for (int i=0; i<songLength; i++) 
+  {
+    tone_ = melody[i];
+    beat = beats[i];
+
+    duration = beat * tempo;
+
+    playTone(); 
+    delayMicroseconds(pause);
+  }
+
+  pinMode(speaker, OUTPUT);
+}
+
+void playTone() 
+{
+  long elapsed_time = 0;
+  if (tone_ > 0) 
+  { 
+    while (elapsed_time < duration) 
+    {
+      digitalWrite(speaker,HIGH);
+      delayMicroseconds(tone_ / 2);
+
+      // DOWN
+      digitalWrite(speaker, LOW);
+      delayMicroseconds(tone_ / 2);
+
+      // Keep track of how long we pulsed
+      elapsed_time += (tone_);
+    } 
+  }
+  else 
+  {
+    for (int j = 0; j < rest_count; j++) 
+    {
+      delayMicroseconds(duration);  
+    }                                
+  } 
+}
+//==========================================================
+
+
 
 void loop()
 {
@@ -314,7 +430,58 @@ void loop()
     //delay(3000);
     nfctrucmuch();
 
-    Serial.print("ARENE A FAIRE : ");
-    Serial.println(areneId);
-    
+    if(strcmp(areneId,"")!=0){
+      Serial.print("ARENE A FAIRE : ");
+      Serial.println(areneId);
+      Serial.print("NOM ARENE : ");
+      Serial.println(nomEpreuve);
+      Serial.print("INSTRUCTION : ");
+      Serial.println(instruction);
+    }
+
+    if(strcmp(areneId,"A1") == 0){
+        epreuveA1();
+    }
+    else if(strcmp(areneId,"A2") == 0){
+        //FONCTION;
+    }
+    else if(strcmp(areneId,"A3a") == 0){
+        melodie();
+    }
+    else if(strcmp(areneId,"A4a") == 0){
+        //FONCTION;
+    }
+
+    areneId="";
 }
+
+void epreuveA1()
+{
+  Serial.print("connection to broker for A1");
+  if(client.connect("teamC", "Psykokwak", "E1255A34")){
+    client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");
+    client.subscribe("24hcode/teamC/7d253/broker2device");
+  }
+  Serial.println("Message envoyé!");
+}
+
+void epreuveA2()
+{
+  Serial.print("connection to broker for A2");
+  if(client.connect("teamC", "Psykokwak", "E1255A34")){
+    client.publish("24hcode/teamC/7d253/device2broker",strcat("A2",instruction));
+    client.subscribe("24hcode/teamC/7d253/broker2device");
+  }
+  Serial.println("Message envoyé!");
+}
+
+void epreuveA5(){
+  
+}
+
+void melodie(){
+  chanter(instruction);
+  //Serial.println("OHHHH SOLE MIIOOOO !!!");
+  //delay(4000);
+}
+
