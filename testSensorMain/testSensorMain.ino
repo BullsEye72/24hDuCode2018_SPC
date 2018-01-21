@@ -138,7 +138,10 @@ void setup()
     delay(10000);
   }
   // you're connected now, so print out the data:
-  Serial.print("You're connected to the network");
+  Serial.print("You're connected to the network - ");
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
 }
 
 
@@ -443,13 +446,16 @@ void loop()
         epreuveA1();
     }
     else if(strcmp(areneId,"A2") == 0){
-        //FONCTION;
+        epreuveA2();
     }
     else if(strcmp(areneId,"A3a") == 0){
         melodie();
     }
     else if(strcmp(areneId,"A4a") == 0){
         //FONCTION;
+    }
+    else if(strcmp(areneId,"A5a") == 0){
+        epreuveA5();
     }
 
     areneId="";
@@ -468,15 +474,57 @@ void epreuveA1()
 void epreuveA2()
 {
   Serial.print("connection to broker for A2");
+
+  char tmpChar[50] = "A2:";
+  strcat(tmpChar,instruction);
+
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
-    client.publish("24hcode/teamC/7d253/device2broker",strcat("A2",instruction));
-    client.subscribe("24hcode/teamC/7d253/broker2device");
+    client.publish("24hcode/teamC/7d253/device2broker", tmpChar);
   }
   Serial.println("Message envoyé!");
 }
 
 void epreuveA5(){
-  
+    char message[100], ch;
+    int i, key;
+
+    Serial.println("connection to broker for A5");
+     
+    for(key = 1; key<26 ; key++){
+      strcpy(message,instruction);
+      
+      for(i = 0; message[i] != '\0'; ++i){
+          ch = message[i];
+          
+          if(ch >= 'a' && ch <= 'z'){
+              ch = ch - key;
+              
+              if(ch < 'a'){
+                  ch = ch + 'z' - 'a' + 1;
+              }
+              
+              message[i] = ch;
+          }
+          else if(ch >= 'A' && ch <= 'Z'){
+              ch = ch - key;
+              
+              if(ch < 'A'){
+                  ch = ch + 'Z' - 'A' + 1;
+              }
+              
+              message[i] = ch;
+          }
+      }
+
+      char tmpChar[50] = "A5a:";
+      strcat(tmpChar,message);
+      
+      if(client.connect("teamC", "Psykokwak", "E1255A34")){
+        client.publish("24hcode/teamC/7d253/device2broker",tmpChar);
+      }
+    }
+      
+  Serial.println("Message envoyé!");
 }
 
 void melodie(){
