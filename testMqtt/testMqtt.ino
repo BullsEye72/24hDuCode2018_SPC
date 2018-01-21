@@ -1,4 +1,3 @@
-/*
 #include <common.h>
 #include <drv_95HF.h>
 #include <drv_spi.h>
@@ -27,7 +26,6 @@
 #include <lib_pcd.h>
 #include <lib_wrapper.h>
 #include <miscellaneous.h>
-*/
 
 #include <SPI.h>
 #include <WiFiST.h>
@@ -55,7 +53,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   //Initialize serial and wait for port to open:
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
@@ -66,25 +64,25 @@ void setup() {
     Serial.println(ssid);
     // Connect to WPA/WPA2 network:
     status = WiFi.begin(ssid, pass);
-    // wait for connection:
-    delay(1000);
+    // wait 5 seconds for connection:
+    delay(10000);
   }
-  Serial.println("You're connected to the network");
-  
-  
+  // you're connected now, so print out the data:
+  Serial.print("You're connected to the network");
 
-}
-
-void sendMessage2Broker(chr* message){
-  Serial.println("connection to broker and send message");
+  Serial.print("connection to broker");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
+    client.publish("24hcode/teamC/7d253/device2broker","A2:SuperFast");
     client.subscribe("24hcode/teamC/7d253/broker2device");
-    //client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");    
-    client.publish("24hcode/teamC/7d253/device2broker","A3a:A#BA#AA#AG#GG#GF#FF#FED#ED#DC#CC#DD#A");    
-    
   }
+  Serial.print("Test end");
 }
 
 void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(200);                       // wait for a second
+  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+  delay(200);
+
   client.loop();
 }
