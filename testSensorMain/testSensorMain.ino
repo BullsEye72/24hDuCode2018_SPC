@@ -327,32 +327,27 @@ void loopTracking(){
 #define  B     2028    // 493 Hz 
 #define  R     20
 
-#define  C     3830    // 261 Hz
-#define  D     3400    // 294 Hz
-#define  E     3038    // 329 Hz
-#define  F     2864    // 349 Hz 
-#define  G     2550    // 392 Hz 
-#define  A     2272    // 440 Hz 
-#define  B     2028    // 493 Hz 
-#define  R     20
-
-long duration  = 0;
-int rest_count = 100;
-int speaker = A5;
-int* melody;
-int* beats;
-long tempo = 10000;
-int pause = 1000; 
-int tone_ = 0;
-int beat = 0;
-
 void chanter(char* tab)
 {
-  int songLength = 0;
-  for(songLength; tab[songLength] ; songLength++); 
-  Serial.print("Longueur partition : ");
+  long duration  = 0;
+  int rest_count = 100;
+  int speaker = A5;
+  long tempo = 10000;
+  int pause = 1000; 
+  int tone_ = 0;
+  int beat = 0;
+  //int songLength = sizeof(tab) / sizeof(char)-1;  
+  //int songLength = 20;  
+  int songLength = strlen(tab);
+  int melody[songLength];
+  int beats[songLength];
+
+  pinMode(speaker, OUTPUT);
+ 
+  Serial.print("ON EST ICI : ");
   Serial.println(songLength);
-  
+  Serial.println(instruction);
+
   for(int i = 0; i < songLength; i++)
   {
     if(tab[i] == 'C')
@@ -404,39 +399,34 @@ void chanter(char* tab)
 
     duration = beat * tempo;
 
-    playTone(); 
-    delayMicroseconds(pause);
-  }
+    long elapsed_time = 0;
+    if (tone_ > 0) 
+    { 
+      while (elapsed_time < duration) 
+      {
+        digitalWrite(speaker,HIGH);
+        delayMicroseconds(tone_ / 2);
 
-  pinMode(speaker, OUTPUT);
-}
-
-void playTone() 
-{
-  long elapsed_time = 0;
-  if (tone_ > 0) 
-  { 
-    while (elapsed_time < duration) 
-    {
-      digitalWrite(speaker,HIGH);
-      delayMicroseconds(tone_ / 2);
-
-      // DOWN
-      digitalWrite(speaker, LOW);
-      delayMicroseconds(tone_ / 2);
+        // DOWN
+        digitalWrite(speaker, LOW);
+        delayMicroseconds(tone_ / 2);
 
       // Keep track of how long we pulsed
-      elapsed_time += (tone_);
-    } 
-  }
-  else 
-  {
-    for (int j = 0; j < rest_count; j++) 
+        elapsed_time += (tone_);
+      } 
+    }
+    else 
     {
-      delayMicroseconds(duration);  
-    }                                
-  } 
+      for (int j = 0; j < rest_count; j++) 
+      {
+        delayMicroseconds(duration);  
+      }                                
+    } 
+    
+    delayMicroseconds(pause);
+   } 
 }
+
 //==========================================================
 bool isPetted = false;
 bool isStuck = false;
@@ -548,11 +538,15 @@ void epreuveA2()
 }
 
 void epreuveA3(){
-    Serial.println("connection to broker for A3");
-
+   
+  chanter(instruction);
+  //Serial.println("OHHHH SOLE MIIOOOO !!!");
+  //delay(4000);
+  
   char tmpChar[50] = "A3a:";
   strcat(tmpChar,instruction);
-
+  
+  Serial.println("connection to broker for A3");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
     client.publish("24hcode/teamC/7d253/device2broker", tmpChar);
   }
@@ -628,11 +622,5 @@ void epreuveA5(){
     }
       
   Serial.println("Message envoyé!");
-}
-
-void melodie(){
-  //chanter(instruction);
-  Serial.println("OHHHH SOLE MIIOOOO !!!");
-  delay(4000);
 }
 

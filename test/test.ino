@@ -9,19 +9,23 @@
 // Define a special note, 'R', to represent a rest
 #define  R     20
 
-long duration  = 0;
-int rest_count = 100;
-int speaker = A5;
-int* melody;
-int* beats;
-long tempo = 10000;
-int pause = 1000; 
-int tone_ = 0;
-int beat = 0;
-
-void chanter(char * tab)
+void chanter(char* tab)
 {
-  int songLength = (int) sizeof(tab);
+  long duration  = 0;
+  int rest_count = 100;
+  int speaker = A5;
+  long tempo = 10000;
+  int pause = 1000; 
+  int tone_ = 0;
+  int beat = 0;
+  int songLength = sizeof(tab) / sizeof(char)-1;  
+  int melody[songLength];
+  int beats[songLength];
+
+  pinMode(speaker, OUTPUT);
+ 
+  Serial.print("ON EST ICI : ");
+  Serial.println(songLength);
 
   for(int i = 0; i < songLength; i++)
   {
@@ -74,36 +78,31 @@ void chanter(char * tab)
 
     duration = beat * tempo;
 
-    playTone(); 
-    delayMicroseconds(pause);
-  }
+    long elapsed_time = 0;
+    if (tone_ > 0) 
+    { 
+      while (elapsed_time < duration) 
+      {
+        digitalWrite(speaker,HIGH);
+        delayMicroseconds(tone_ / 2);
 
-  pinMode(speaker, OUTPUT);
-}
-
-void playTone() 
-{
-  long elapsed_time = 0;
-  if (tone_ > 0) 
-  { 
-    while (elapsed_time < duration) 
-    {
-      digitalWrite(speaker,HIGH);
-      delayMicroseconds(tone_ / 2);
-
-      // DOWN
-      digitalWrite(speaker, LOW);
-      delayMicroseconds(tone_ / 2);
+        // DOWN
+        digitalWrite(speaker, LOW);
+        delayMicroseconds(tone_ / 2);
 
       // Keep track of how long we pulsed
-      elapsed_time += (tone_);
-    } 
-  }
-  else 
-  {
-    for (int j = 0; j < rest_count; j++) 
+        elapsed_time += (tone_);
+      } 
+    }
+    else 
     {
-      delayMicroseconds(duration);  
-    }                                
-  } 
+      for (int j = 0; j < rest_count; j++) 
+      {
+        delayMicroseconds(duration);  
+      }                                
+    } 
+    
+    delayMicroseconds(pause);
+   } 
 }
+
