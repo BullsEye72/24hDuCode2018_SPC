@@ -13,6 +13,7 @@
 #include "lib_NDEF_URI.h"
 #include "drv_spi.h"
 #include <Servo.h>
+#include <time.h>
 
 #define SerialPort Serial
 
@@ -86,8 +87,6 @@ int sensor_L = 1;
 int detect_SL;
 int detect_SR;
 
-int speedval=8;
-int turnFact=3;
 int trackingState=0;
 bool lost=false;
 
@@ -133,65 +132,76 @@ void checkAndUpdateState()
 //Serial.print(trackingState);
 //Serial.print(lost);
 //Serial.println("==========");
+
   if(trackingState == 0 && (detect_SL==LOW || detect_SR==LOW))
   {
     //Serial.println("0");
     trackingState=1;
     lost=false;
-    return;
   }
-
-  if(!lost && (detect_SL==HIGH || detect_SR==HIGH)){
+  else if(detect_SL==HIGH || detect_SR==HIGH){
     //Serial.println("1");
     lost = true;
-    if(detect_SL==HIGH) { trackingState=3; }
-    if(detect_SR==HIGH) { trackingState=2; }
-    return;
+    if(detect_SL==HIGH)
+    {
+      trackingState=2;
+     }
+     else if(detect_SR==HIGH)
+     {
+      trackingState=3; 
+      }
   }
-
-  if(lost && trackingState==2 && detect_SL==LOW){
+  else if(lost && trackingState==2 && detect_SL==LOW){
     //Serial.println("2");
     lost=false;
     trackingState=1;
-    return;
   }
-
-  if(lost && trackingState==3 && detect_SR==LOW){
+  else if(lost && trackingState==3 && detect_SR==LOW){
     //Serial.println("3");
     lost=false;
     trackingState=1;
-    return;
   }
-
+  
+  
   if(detect_SL==HIGH && detect_SR==HIGH){
     //Serial.println("4");
     trackingState=0;
-  }
-  
+  }  
   
 }
 
 void ApplyState(){
+  int Rval = 90;
+  int Lval = 90;
+
+  int speedvalFast=15;
+  int speedvalSlow=12;
+  int turnFact=4;
+  
   switch(trackingState)
   {
     case 1 : //TOUT DROIT !
-      fs90r_L.write(90+speedval);
-      fs90r_R.write(88-speedval);
+      fs90r_L.write(Rval+speedvalFast);
+      fs90r_R.write(Rval-speedvalFast);
       break;
     case 2 : //A GAUCHE !
-      fs90r_L.write(90+speedval*turnFact);
-      fs90r_R.write(88+speedval*turnFact);
+      fs90r_L.write(Rval-speedvalSlow);
+      fs90r_R.write(Rval-speedvalSlow);
       break;
     case 3 : //A DROITE !
-      fs90r_L.write(90-speedval*turnFact);
-      fs90r_R.write(88-speedval*turnFact);
+      fs90r_L.write(Rval+speedvalSlow);
+      fs90r_R.write(Rval+speedvalSlow);
       break;
     default: //STOP !
-      fs90r_L.write(90);
-      fs90r_R.write(88);
+      fs90r_L.write(Rval);
+      fs90r_R.write(Rval);
       break;
   }
 }
+
+char* areneId;
+char* nomEpreuve;
+char* inscruction;
 
 void nfctrucmuch(){
 
@@ -231,7 +241,6 @@ void nfctrucmuch(){
    
   //delay(300);
 
-    if(false){
   if (TagDetected == true)
   {       
     TagDetected = false;
@@ -254,17 +263,25 @@ void nfctrucmuch(){
           if (NDEF_ReadURI(&RecordStruct, &url)==RESULTOK) /*---if URI read passed---*/
           {
             char* dataNFC = (char *)url.URI_Message;
-            char areneId[5];
-            char nomEpreuve[50];
-            char inscruction[200];
-  
-            //char str[] ="- This, a sample string.";
+            areneId = "";
+            nomEpreuve = "";
+            inscruction = "";
+
+              
             char * pch;
-            //Serial.println ("Splitting string \"%s\" into tokens:\n",dataNFC);
             pch = strtok (dataNFC,":");
             while (pch != NULL)
             {
-              printf ("%s\n",pch);
+              if(areneId==""){
+                areneId=pch;
+              }
+              else if(nomEpreuve==""){
+                nomEpreuve=pch;
+              }
+              else if(inscruction==""){
+                inscruction=pch;
+              }
+              
               pch = strtok (NULL, ":");
             }
            
@@ -276,17 +293,28 @@ void nfctrucmuch(){
       }
       Serial.println("Suite.");
   }
-    }
+    
+}
+
+void loopTracking(){
+  checkAndUpdateState();
+  ApplyState();
 }
 
 void loop()
 {
+
+    for(int i = 0 ; i < 50 ; i++){
+      loopTracking();
+      delay(5);
+    } 
     
-    checkAndUpdateState();
+    trackingState=0;
     ApplyState();
-    //delay(20);
+    //delay(3000);
+    nfctrucmuch();
 
-    //nfctrucmuch();
-
-
+    Serial.print("ARENE A FAIRE : ");
+    Serial.println(areneId);
+    
 }
