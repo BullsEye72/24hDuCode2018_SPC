@@ -195,8 +195,8 @@ void ApplyState(){
   int Rval = 90;
   int Lval = 90;
 
-  int speedvalFast=15;
-  int speedvalSlow=12;
+  int speedvalFast=20;
+  int speedvalSlow=15;
   int turnFact=4;
   
   switch(trackingState)
@@ -449,7 +449,7 @@ void loop()
         epreuveA2();
     }
     else if(strcmp(areneId,"A3a") == 0){
-        melodie();
+        epreuveA3();
     }
     else if(strcmp(areneId,"A4a") == 0){
         //FONCTION;
@@ -463,7 +463,7 @@ void loop()
 
 void epreuveA1()
 {
-  Serial.print("connection to broker for A1");
+  Serial.println("connection to broker for A1");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
     client.publish("24hcode/teamC/7d253/device2broker","A1:Hello 24h du code!");
     client.subscribe("24hcode/teamC/7d253/broker2device");
@@ -473,7 +473,7 @@ void epreuveA1()
 
 void epreuveA2()
 {
-  Serial.print("connection to broker for A2");
+  Serial.println("connection to broker for A2");
 
   char tmpChar[50] = "A2:";
   strcat(tmpChar,instruction);
@@ -482,6 +482,19 @@ void epreuveA2()
     client.publish("24hcode/teamC/7d253/device2broker", tmpChar);
   }
   Serial.println("Message envoyé!");
+}
+
+void epreuveA3(){
+    Serial.println("connection to broker for A3");
+
+  char tmpChar[50] = "A3a:";
+  strcat(tmpChar,instruction);
+
+  if(client.connect("teamC", "Psykokwak", "E1255A34")){
+    client.publish("24hcode/teamC/7d253/device2broker", tmpChar);
+  }
+  Serial.println("Message envoyé!");
+  Serial.println(tmpChar);
 }
 
 void epreuveA5(){
@@ -528,8 +541,8 @@ void epreuveA5(){
 }
 
 void melodie(){
-  chanter(instruction);
-  //Serial.println("OHHHH SOLE MIIOOOO !!!");
-  //delay(4000);
+  //chanter(instruction);
+  Serial.println("OHHHH SOLE MIIOOOO !!!");
+  delay(4000);
 }
 
