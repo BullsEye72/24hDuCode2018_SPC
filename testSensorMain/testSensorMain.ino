@@ -570,6 +570,17 @@ void epreuveA6(){
 }
 
 void epreuveA8(){
+  int servo_tof = 3;
+  Servo fs90_tof;
+  fs90_tof.attach(servo_tof, 900, 2100);
+
+  for(int r = 0 ; r < 5 ; r++){
+    fs90_tof.write(200);
+    delay(500);
+    fs90_tof.write(50);
+    delay(500);
+  }
+  fs90_tof.write(130);
     
   Serial.println("connection to broker for A8");
   if(client.connect("teamC", "Psykokwak", "E1255A34")){
